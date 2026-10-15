@@ -1,3 +1,3 @@
 layout: page
 title: "index"
-permalink: /HW1
+permalink: /HW1/*
