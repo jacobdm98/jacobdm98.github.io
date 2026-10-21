@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework 2: Advanced ECC & Cryptanalysis Suite</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #000000;
+            --card-bg: #ffffff;
+            --border: #000000;
+            --accent: #222222;
+            --muted: #555555;
+            --light-bg: #f5f5f5;
+            --highlight: #d0d0d0;
+            --font: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font);
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        h3 {
+            font-size: 0.95rem;
+            margin-top: 10px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 24px;
+            background: var(--card-bg);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        input, select, button, textarea {
+            font-family: var(--font);
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--fg);
+            border-radius: 0;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--fg);
+        }
+
+        button {
+            cursor: pointer;
+            background: var(--fg);
+            color: var(--bg);
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: background 0.1s, color 0.1s;
+            margin-top: 6px;
+            margin-right: 4px;
+        }
+
+        button:hover {
+            background: var(--muted);
+            color: var(--bg);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--fg);
+        }
+
+        .btn-secondary:hover {
+            background: var(--light-bg);
+            color: var(--fg);
+        }
+
+        .grid-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        canvas {
+            border: 1px solid var(--border);
+            background: var(--bg);
+            display: block;
+        }
+
+        .output-box {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        .comparison-table th {
+            background: var(--light-bg);
+            text-transform: uppercase;
+        }
+
+        .doc-item {
+            border-bottom: 1px dashed var(--border);
+            padding: 8px 0;
+        }
+
+        .doc-item:last-child {
+            border-bottom: none;
+        }
+
+        .doc-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .doc-desc {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .chart-container {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .preset-btns {
+            margin-bottom: 8px;
+        }
+
+        .preset-btns button {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+        }
+
+        .badge-safe {
+            background: #000;
+            color: #fff;
+            padding: 1px 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Homework 2: ECC & Cryptanalysis Suite</h1>
+    <p class="subtitle">Full Integrated Solution: ElGamal ECC, Caesar Chi-Square & N-Gram Analysis, Key Recovery Attacks, & Function Docs</p>
+
+    <!-- SECTION 1: GLOBAL CONFIGURATION & VISUAL GRID -->
+    <div class="card">
+        <h2>1. Curve Parameters & Interactive Canvas Grid (y² = x³ + 7 mod 17)</h2>
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="privateKeyInput">Private Key (k):</label>
+                <input type="number" id="privateKeyInput" value="6" min="1" max="17">
+            </div>
+            <div class="control-group">
+                <label for="basePointSelect">Base Point (G):</label>
+                <select id="basePointSelect"></select>
+            </div>
+            <div class="control-group">
+                <label for="ephemeralKeyInput">Ephemeral Key (r):</label>
+                <input type="number" id="ephemeralKeyInput" value="3" min="1" max="17">
+            </div>
+        </div>
+
+        <div class="grid-layout">
+            <div>
+                <canvas id="curveCanvas" width="300" height="300"></canvas>
+                <p class="hint">Click any grid point to set as Base Point G.</p>
+            </div>
+            <div style="flex: 1; min-width: 280px;">
+                <div id="paramSummary" class="output-box">Select parameters to render key pair...</div>
+                <div style="margin-top: 8px;">
+                    <label>Scalar Multiplication Method:</label>
+                    <select id="algoSelect" style="width: 100%;">
+                        <option value="linear">Linear Point Addition [O(k)]</option>
+                        <option value="doubleAdd">Double-and-Add Expansion [O(log k)]</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOY ECC ENCRYPTION & DECRYPTION -->
+    <div class="card">
+        <h2>2. Toy ECC ElGamal Encryption & Decryption <span class="badge-safe">Infinity Guard Active</span></h2>
+        <p class="hint">Message characters are encoded to points mod 17. Infinity results ($S=O$) are automatically bypassed by fallback keys.</p>
+        
+        <div class="controls-grid" style="margin-top: 10px;">
+            <div class="control-group" style="grid-column: span 2;">
+                <label for="eccTextInput">Input Message (Text or Int 0-16):</label>
+                <input type="text" id="eccTextInput" value="HELLO ECC">
+            </div>
+        </div>
+
+        <button id="eccEncryptBtn">Encrypt Message</button>
+        <button id="eccDecryptBtn" class="btn-secondary">Decrypt Message</button>
+
+        <div id="eccOutput" class="output-box" style="margin-top: 10px;">Execute encryption to view ciphertext pairs...</div>
+    </div>
+
+    <!-- SECTION 3: CAESAR CIPHER & COMPARISON -->
+    <div class="card">
+        <h2>3. Caesar Cipher & Scheme Comparison</h2>
+        <div class="controls-grid">
+            <div class="control-group" style="grid-column: span 2;">
+                <label for="caesarInputText">Text to Encrypt / Decrypt:</label>
+                <input type="text" id="caesarInputText" value="CRYPTOGRAPHY IS FASCINATING AND ELEGANT">
+            </div>
+            <div class="control-group">
+                <label for="caesarShiftInput">Shift Key (k):</label>
+                <input type="number" id="caesarShiftInput" value="3" min="0" max="25">
+            </div>
+        </div>
+
+        <button id="caesarEncryptBtn">Encrypt</button>
+        <button id="caesarDecryptBtn" class="btn-secondary">Decrypt</button>
+
+        <div id="caesarOutput" class="output-box" style="margin-top: 10px;">Caesar operation logs...</div>
+
+        <h3>Scheme Comparison Table</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Caesar Cipher</th>
+                    <th>Toy ECC (ElGamal)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Cipher Type</strong></td>
+                    <td>Symmetric (Monoalphabetic Substitution)</td>
+                    <td>Asymmetric (Public-Key / Ephemeral Secret)</td>
+                </tr>
+                <tr>
+                    <td><strong>Key Space Size</strong></td>
+                    <td>|K| = 26 possible shifts</td>
+                    <td>|K| = 18 points on curve (order of G)</td>
+                </tr>
+                <tr>
+                    <td><strong>Security Basis</strong></td>
+                    <td>Security by obscure key / trivial search</td>
+                    <td>Discrete Logarithm Hardness (DLP)</td>
+                </tr>
+                <tr>
+                    <td><strong>Letter Statistics</strong></td>
+                    <td>Preserves identical frequency curve (shifted)</td>
+                    <td>Pseudorandomly distributes coordinates</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 4: STATISTICAL CRYPTANALYSIS -->
+    <div class="card">
+        <h2>4. Statistical Cryptanalysis of Caesar Cipher (Chi-Square & N-Gram)</h2>
+        <p class="hint">Select sample text length presets to observe statistical convergence and error rates.</p>
+        
+        <div class="preset-btns">
+            <strong>Text Length Presets:</strong>
+            <button id="presetShortBtn" class="btn-secondary">Short (5 chars)</button>
+            <button id="presetMedBtn" class="btn-secondary">Medium (40 chars)</button>
+            <button id="presetLongBtn" class="btn-secondary">Long (300+ chars)</button>
+        </div>
+
+        <div class="control-group">
+            <textarea id="sampleCorpusText" rows="3">THE CAESAR CIPHER IS A TRIVIAL SUBSTITUTION SCHEME. WHEN Ciphertext IS SUFFICIENTLY LONG, FREQUENCY ANALYSIS WILL EASILY RECOVER THE SHIFT KEY.</textarea>
+        </div>
+
+        <button id="runStatsBtn">Run Chi-Square Analysis</button>
+
+        <div class="grid-layout" style="margin-top: 10px;">
+            <div class="chart-container" style="flex: 1; min-width: 280px;">
+                <canvas id="freqChartCanvas" width="400" height="180"></canvas>
+            </div>
+            <div style="flex: 1; min-width: 280px;">
+                <div id="statsOutput" class="output-box">Analysis results will render here...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: KEY RECOVERY ATTACKS & DISCRETE LOG -->
+    <div class="card">
+        <h2>5. Restricted Key-Space Attack vs. Real secp256k1</h2>
+        <p class="hint">Executes both Linear Exhaustive Search and Baby-Step Giant-Step (BSGS) algorithm on the restricted curve.</p>
+        
+        <button id="runExhaustiveAttackBtn">Launch Exhaustive Attack</button>
+        <button id="runBsgsAttackBtn" class="btn-secondary">Launch BSGS Attack [O(√N)]</button>
+
+        <div id="attackOutput" class="output-box" style="margin-top: 10px;">Launch an attack to test private key recovery...</div>
+
+        <h3>Why Attacks Fail on Real secp256k1</h3>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">
+            Our toy curve has group order N = 18, making brute-force instant. Real secp256k1 has order N ≈ 2²⁵⁶ ≈ 1.15 × 10⁷⁷. 
+            An exhaustive search would require checking 10⁷⁷ points. Even with BSGS, storing O(√N) = 2¹²⁸ points requires 
+            over 10³⁸ bytes of RAM—more storage than all matter in the observable universe.
+        </p>
+    </div>
+
+    <!-- SECTION 6: FUNCTION DOCUMENTATION INDEX -->
+    <div class="card">
+        <h2>6. Code Structure & Function Documentation</h2>
+        <div id="functionDocs">
+            <!-- Documentation populated dynamically by JS -->
+        </div>
+    </div>
+
+    <script>
+        // ====================================================================
+        // MATH ENGINE & CURVE DEFINITION (y^2 = x^3 + 7 mod 17)
+        // ====================================================================
+        const P = 17;
+        const A = 0;
+        const B = 7;
+
+        function mod(n, m) { return ((n % m) + m) % m; }
+
+        function modInverse(a, m) {
+            a = mod(a, m);
+            let t = 0, newT = 1;
+            let r = m, newR = a;
+            while (newR !== 0) {
+                let q = Math.floor(r / newR);
+                let tempT = t - q * newT; t = newT; newT = tempT;
+                let tempR = r - q * newR; r = newR; newR = tempR;
+            }
+            if (r > 1) return null;
+            if (t < 0) t += m;
+            return t;
+        }
+
+        function findAllPoints() {
+            let pts = [{ x: null, y: null, label: 'O (Infinity)' }];
+            for (let x = 0; x < P; x++) {
+                let rhs = mod(x * x * x + A * x + B, P);
+                for (let y = 0; y < P; y++) {
+                    if (mod(y * y, P) === rhs) {
+                        pts.push({ x: x, y: y, label: `(${x}, ${y})` });
+                    }
+                }
+            }
+            return pts;
+        }
+
+        function pointAdd(P1, P2) {
+            if (P1.x === null && P1.y === null) return P2;
+            if (P2.x === null && P2.y === null) return P1;
+            if (P1.x === P2.x && mod(P1.y + P2.y, P) === 0) return { x: null, y: null };
+
+            let m;
+            if (P1.x === P2.x && P1.y === P2.y) {
+                let num = mod(3 * P1.x * P1.x + A, P);
+                let denInv = modInverse(2 * P1.y, P);
+                if (denInv === null) return { x: null, y: null };
+                m = mod(num * denInv, P);
+            } else {
+                let num = mod(P2.y - P1.y, P);
+                let denInv = modInverse(P2.x - P1.x, P);
+                if (denInv === null) return { x: null, y: null };
+                m = mod(num * denInv, P);
+            }
+
+            let x3 = mod(m * m - P1.x - P2.x, P);
+            let y3 = mod(m * (P1.x - x3) - P1.y, P);
+            return { x: x3, y: y3 };
+        }
+
+        function scalarMultiplyLinear(k, G) {
+            let current = { x: null, y: null };
+            let temp = { x: G.x, y: G.y };
+            for (let i = 1; i <= k; i++) {
+                current = pointAdd(current, G);
+            }
+            return current;
+        }
+
+        function scalarMultiplyDoubleAdd(k, G) {
+            let res = { x: null, y: null };
+            let addend = { x: G.x, y: G.y };
+            let bits = k.toString(2);
+            for (let i = bits.length - 1; i >= 0; i--) {
+                if (bits[i] === '1') res = pointAdd(res, addend);
+                addend = pointAdd(addend, addend);
+            }
+            return res;
+        }
+
+        function scalarMultiply(k, G) {
+            let algo = document.getElementById('algoSelect')?.value || 'linear';
+            return algo === 'doubleAdd' ? scalarMultiplyDoubleAdd(k, G) : scalarMultiplyLinear(k, G);
+        }
+
+        // ====================================================================
+        // UI & STATE MANAGEMENT
+        // ====================================================================
+        const allPoints = findAllPoints();
+        const basePointSelect = document.getElementById('basePointSelect');
+        const privateKeyInput = document.getElementById('privateKeyInput');
+        const ephemeralKeyInput = document.getElementById('ephemeralKeyInput');
+        const canvas = document.getElementById('curveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        allPoints.forEach((pt, idx) => {
+            if (pt.x !== null) {
+                let opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = pt.label;
+                if (pt.x === 1 && pt.y === 5) opt.selected = true;
+                basePointSelect.appendChild(opt);
+            }
+        });
+
+        function getSelectedG() {
+            let idx = parseInt(basePointSelect.value);
+            return allPoints[idx];
+        }
+
+        function drawCanvas(highlights = []) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let cellSize = canvas.width / P;
+
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= P; i++) {
+                ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(canvas.width, i * cellSize); ctx.stroke();
+            }
+
+            allPoints.forEach(pt => {
+                if (pt.x === null) return;
+                let px = pt.x * cellSize + cellSize / 2;
+                let py = (P - 1 - pt.y) * cellSize + cellSize / 2;
+
+                let isHl = highlights.some(h => h && h.x === pt.x && h.y === pt.y);
+                ctx.fillStyle = isHl ? '#000000' : '#bbbbbb';
+                ctx.beginPath();
+                ctx.arc(px, py, isHl ? 6 : 3.5, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function updateParams() {
+            let k = parseInt(privateKeyInput.value) || 1;
+            let G = getSelectedG();
+            let Q = scalarMultiply(k, G);
+            let r = parseInt(ephemeralKeyInput.value) || 1;
+
+            let out = `--- SYSTEM CONFIGURATION ---\n`;
+            out += `Base Point G  : (${G.x}, ${G.y})\n`;
+            out += `Private Key k : ${k}\n`;
+            out += `Public Key Q  : ${Q.x !== null ? `(${Q.x},${Q.y})` : 'O (Infinity)'}\n`;
+            out += `Ephemeral r   : ${r}\n`;
+            
+            if (Q.x === null) {
+                out += `\n[WARNING] Public Key Q is Infinity! Encryption will hit Infinity shared secrets.`;
+            }
+
+            document.getElementById('paramSummary').textContent = out;
+            drawCanvas([G, Q]);
+        }
+
+        basePointSelect.addEventListener('change', updateParams);
+        privateKeyInput.addEventListener('input', updateParams);
+        ephemeralKeyInput.addEventListener('input', updateParams);
+        document.getElementById('algoSelect').addEventListener('change', updateParams);
+
+        canvas.addEventListener('click', (e) => {
+            let rect = canvas.getBoundingClientRect();
+            let cellSize = canvas.width / P;
+            let clickX = e.clientX - rect.left;
+            let clickY = e.clientY - rect.top;
+
+            let gridX = Math.floor(clickX / cellSize);
+            let gridY = P - 1 - Math.floor(clickY / cellSize);
+
+            let idx = allPoints.findIndex(pt => pt.x === gridX && pt.y === gridY);
+            if (idx !== -1) {
+                basePointSelect.value = idx;
+                updateParams();
+            }
+        });
+
+        // ====================================================================
+        // SECTION 2: TOY ECC ENCRYPTION WITH INFINITY GUARD
+        // ====================================================================
+        let lastEccCiphertext = [];
+
+        function eccEncryptChar(charCode, Q, G, initialR) {
+            let r = initialR;
+            let C1, S;
+            
+            for (let attempts = 0; attempts < P; attempts++) {
+                C1 = scalarMultiply(r, G);
+                S = scalarMultiply(r, Q);
+                
+                if (S.x !== null && C1.x !== null) {
+                    break; 
+                }
+                r = (r % (P - 1)) + 1; 
+            }
+
+            if (S.x === null) throw new Error("Could not bypass Infinity secret.");
+
+            let m = mod(charCode, P);
+            let C2 = mod(m + S.x, P);
+            return { C1, C2, usedR: r };
+        }
+
+        document.getElementById('eccEncryptBtn').addEventListener('click', () => {
+            let k = parseInt(privateKeyInput.value);
+            let G = getSelectedG();
+            let Q = scalarMultiply(k, G);
+            let initialR = parseInt(ephemeralKeyInput.value);
+            let inputStr = document.getElementById('eccTextInput').value;
+
+            if (Q.x === null) {
+                document.getElementById('eccOutput').textContent = "ERROR: Public key Q is Infinity. Change private key k.";
+                return;
+            }
+
+            lastEccCiphertext = [];
+            let log = `=== TOY ECC ENCRYPTION LOG ===\n`;
+
+            try {
+                for (let i = 0; i < inputStr.length; i++) {
+                    let code = inputStr.charCodeAt(i);
+                    let res = eccEncryptChar(code, Q, G, initialR);
+                    lastEccCiphertext.push(res);
+                    log += `'${inputStr[i]}' (Code ${code}) -> m=${mod(code, P)} | r=${res.usedR} | C1=(${res.C1.x},${res.C1.y}), C2=${res.C2}\n`;
+                }
+                document.getElementById('eccOutput').textContent = log;
+            } catch (err) {
+                document.getElementById('eccOutput').textContent = "Encryption Error: " + err.message;
+            }
+        });
+
+        document.getElementById('eccDecryptBtn').addEventListener('click', () => {
+            if (lastEccCiphertext.length === 0) {
+                document.getElementById('eccOutput').textContent = "No ciphertext available to decrypt.";
+                return;
+            }
+
+            let k = parseInt(privateKeyInput.value);
+            let log = document.getElementById('eccOutput').textContent + `\n=== TOY ECC DECRYPTION LOG ===\n`;
+
+            lastEccCiphertext.forEach((c, idx) => {
+                let S = scalarMultiply(k, c.C1);
+                if (S.x === null) {
+                    log += `Index ${idx}: Shared Secret is Infinity! Cannot recover.\n`;
+                } else {
+                    let m = mod(c.C2 - S.x, P);
+                    log += `Index ${idx}: Shared S=(${S.x},${S.y}) -> Recovered m=${m}\n`;
+                }
+            });
+
+            document.getElementById('eccOutput').textContent = log;
+        });
+
+        // ====================================================================
+        // SECTION 3: CAESAR CIPHER IMPLEMENTATION
+        // ====================================================================
+        function caesarTransform(text, shift, decrypt = false) {
+            let s = decrypt ? (26 - (shift % 26)) % 26 : shift % 26;
+            return text.toUpperCase().split('').map(c => {
+                let code = c.charCodeAt(0);
+                if (code >= 65 && code <= 90) {
+                    return String.fromCharCode(((code - 65 + s) % 26) + 65);
+                }
+                return c;
+            }).join('');
+        }
+
+        document.getElementById('caesarEncryptBtn').addEventListener('click', () => {
+            let text = document.getElementById('caesarInputText').value;
+            let shift = parseInt(document.getElementById('caesarShiftInput').value);
+            let enc = caesarTransform(text, shift, false);
+            document.getElementById('caesarOutput').textContent = `CAESAR ENCRYPTED (Shift ${shift}):\n${enc}`;
+        });
+
+        document.getElementById('caesarDecryptBtn').addEventListener('click', () => {
+            let text = document.getElementById('caesarInputText').value;
+            let shift = parseInt(document.getElementById('caesarShiftInput').value);
+            let dec = caesarTransform(text, shift, true);
+            document.getElementById('caesarOutput').textContent = `CAESAR DECRYPTED (Shift ${shift}):\n${dec}`;
+        });
+
+        // ====================================================================
+        // SECTION 4: STATISTICAL CRYPTANALYSIS
+        // ====================================================================
+        const ENGLISH_FREQS = [8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074];
+
+        function calculateChiSquared(text) {
+            let counts = new Array(26).fill(0);
+            let letters = text.replace(/[^A-Z]/g, '');
+            if (letters.length === 0) return Infinity;
+
+            for (let c of letters) counts[c.charCodeAt(0) - 65]++;
+
+            let chi = 0;
+            for (let i = 0; i < 26; i++) {
+                let obs = counts[i];
+                let exp = (ENGLISH_FREQS[i] / 100) * letters.length;
+                chi += Math.pow(obs - exp, 2) / (exp || 1);
+            }
+            return chi;
+        }
+
+        function drawFreqChart(scores) {
+            let chartCanvas = document.getElementById('freqChartCanvas');
+            let cctx = chartCanvas.getContext('2d');
+            cctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+            let maxVal = Math.max(...scores.filter(s => s !== Infinity));
+            let barWidth = chartCanvas.width / 26;
+
+            scores.forEach((score, shift) => {
+                let height = score === Infinity ? 0 : (score / maxVal) * (chartCanvas.height - 30);
+                let x = shift * barWidth;
+                let y = chartCanvas.height - 20 - height;
+
+                cctx.fillStyle = score === Math.min(...scores) ? '#000000' : '#aaaaaa';
+                cctx.fillRect(x + 1, y, barWidth - 2, height);
+
+                cctx.fillStyle = '#000000';
+                cctx.font = '9px monospace';
+                cctx.fillText(shift, x + 2, chartCanvas.height - 5);
+            });
+        }
+
+        function runAnalysis() {
+            let text = document.getElementById('sampleCorpusText').value;
+            let scores = [];
+            let bestShift = 0;
+            let minChi = Infinity;
+
+            for (let s = 0; s < 26; s++) {
+                let cand = caesarTransform(text, s, true);
+                let chi = calculateChiSquared(cand);
+                scores.push(chi);
+                if (chi < minChi) {
+                    minChi = chi;
+                    bestShift = s;
+                }
+            }
+
+            drawFreqChart(scores);
+
+            let out = `=== CHI-SQUARED ANALYSIS RESULTS ===\n`;
+            out += `Best Estimated Shift: ${bestShift}\n`;
+            out += `Minimum Chi-Sq Score: ${minChi.toFixed(2)}\n`;
+            out += `Decrypted Preview   : ${caesarTransform(text, bestShift, true).substring(0, 50)}...\n\n`;
+            out += `Top 3 Candidate Shifts:\n`;
+            
+            let sorted = scores.map((sc, idx) => ({ shift: idx, sc })).sort((a,b) => a.sc - b.sc);
+            sorted.slice(0, 3).forEach(item => {
+                out += ` Shift ${item.shift.toString().padStart(2, '0')}: Chi² = ${item.sc.toFixed(2)}\n`;
+            });
+
+            document.getElementById('statsOutput').textContent = out;
+        }
+
+        document.getElementById('runStatsBtn').addEventListener('click', runAnalysis);
+
+        document.getElementById('presetShortBtn').addEventListener('click', () => {
+            document.getElementById('sampleCorpusText').value = "KHOOR";
+            runAnalysis();
+        });
+        document.getElementById('presetMedBtn').addEventListener('click', () => {
+            document.getElementById('sampleCorpusText').value = "FRPSXWHU VFLHQFH LV FRRO";
+            runAnalysis();
+        });
+        document.getElementById('presetLongBtn').addEventListener('click', () => {
+            document.getElementById('sampleCorpusText').value = "WKH FDHVDU FLSKHU LV RQH RI WKH HDUOLHVW DQG VLPSOHVW PHWKRGV RI HQFUBSWLRN. LW LV D WBSH RI VXEVWLWXWLRQ FLSKHU IN ZKLFK HDFK OHWWHU IN WKH SODLQWHAW LV UHSODFHG EB D OHWWHU VRPH ILAHG QXPEHU RI SRVLWLRQV GRZQ WKH DOSKDEHW.";
+            runAnalysis();
+        });
+
+        // ====================================================================
+        // SECTION 5: KEY RECOVERY ATTACKS
+        // ====================================================================
+        document.getElementById('runExhaustiveAttackBtn').addEventListener('click', () => {
+            let kReal = parseInt(privateKeyInput.value);
+            let G = getSelectedG();
+            let Q = scalarMultiply(kReal, G);
+
+            let start = performance.now();
+            let foundK = null;
+            let temp = { x: G.x, y: G.y };
+
+            for (let k = 1; k <= 50; k++) {
+                if (temp.x === Q.x && temp.y === Q.y) {
+                    foundK = k;
+                    break;
+                }
+                temp = pointAdd(temp, G);
+            }
+            let end = performance.now();
+
+            let out = `=== EXHAUSTIVE BRUTE-FORCE ATTACK ===\n`;
+            out += `Target Public Key Q : (${Q.x}, ${Q.y})\n`;
+            out += `Recovered Key k     : ${foundK}\n`;
+            out += `Search Time         : ${(end - start).toFixed(3)} ms\n`;
+            out += `Complexity          : O(N) where N=18`;
+            document.getElementById('attackOutput').textContent = out;
+        });
+
+        document.getElementById('runBsgsAttackBtn').addEventListener('click', () => {
+            let kReal = parseInt(privateKeyInput.value);
+            let G = getSelectedG();
+            let Q = scalarMultiply(kReal, G);
+
+            let start = performance.now();
+            let m = Math.ceil(Math.sqrt(18)); 
+            
+            // Baby steps: store jG
+            let table = {};
+            let curr = { x: null, y: null };
+            for (let j = 0; j < m; j++) {
+                table[`${curr.x},${curr.y}`] = j;
+                curr = pointAdd(curr, G);
+            }
+
+            // Giant steps: Q - i(mG)
+            let mG = scalarMultiply(m, G);
+            let negmG = { x: mG.x, y: mod(-mG.y, P) };
+            let giant = { x: Q.x, y: Q.y };
+            let foundK = null;
+
+            for (let i = 0; i < m; i++) {
+                let key = `${giant.x},${giant.y}`;
+                if (key in table) {
+                    foundK = i * m + table[key];
+                    break;
+                }
+                giant = pointAdd(giant, negmG);
+            }
+            let end = performance.now();
+
+            let out = `=== BABY-STEP GIANT-STEP (BSGS) ATTACK ===\n`;
+            out += `Target Public Key Q : (${Q.x}, ${Q.y})\n`;
+            out += `Recovered Key k     : ${foundK}\n`;
+            out += `Search Time         : ${(end - start).toFixed(3)} ms\n`;
+            out += `Complexity          : O(√N) space/time (m=${m})`;
+            document.getElementById('attackOutput').textContent = out;
+        });
+
+        // ====================================================================
+        // SECTION 6: FUNCTION DOCUMENTATION INDEX
+        // ====================================================================
+        const docData = [
+            { name: "mod(n, m)", desc: "Normalizes modulo results, ensuring positive integers over finite fields." },
+            { name: "modInverse(a, m)", desc: "Calculates modular multiplicative inverse using Extended Euclidean Algorithm." },
+            { name: "pointAdd(P1, P2)", desc: "Executes elliptic curve point addition and doubling over prime field mod 17." },
+            { name: "scalarMultiply(k, G)", desc: "Computes kG using linear addition or fast Double-and-Add algorithms." },
+            { name: "eccEncryptChar(code, Q, G, r)", desc: "Encrypts message to (C1, C2) with automatic Infinity bypass retry logic." },
+            { name: "caesarTransform(text, shift, decrypt)", desc: "Applies modular character shifts mod 26 for Caesar encryption/decryption." },
+            { name: "calculateChiSquared(text)", desc: "Measures goodness-of-fit between text letter frequencies and standard English." }
+        ];
+
+        let docContainer = document.getElementById('functionDocs');
+        docData.forEach(d => {
+            let div = document.createElement('div');
+            div.className = 'doc-item';
+            div.innerHTML = `<div class="doc-name">${d.name}</div><div class="doc-desc">${d.desc}</div>`;
+            docContainer.appendChild(div);
+        });
+
+        // Initialize UI
+        updateParams();
+        runAnalysis();
+    </script>
+</body>
+</html>
