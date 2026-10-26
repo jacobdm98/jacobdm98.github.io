@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stochastic Penetration Process & Limit Theorems</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #000000;
+            --card-bg: #ffffff;
+            --border: #000000;
+            --muted: #555555;
+            --light-bg: #f8f8f8;
+            --font: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font);
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 24px;
+            background: var(--card-bg);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        input, select, button {
+            font-family: var(--font);
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--fg);
+            border-radius: 0;
+        }
+
+        button {
+            cursor: pointer;
+            background: var(--fg);
+            color: var(--bg);
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: background 0.1s;
+            margin-top: 6px;
+        }
+
+        button:hover {
+            background: var(--muted);
+        }
+
+        .grid-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        canvas {
+            border: 1px solid var(--border);
+            background: var(--light-bg);
+            display: block;
+            width: 100%;
+            max-width: 480px;
+            height: 280px;
+        }
+
+        .output-box {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .chart-wrapper {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Stochastic Penetration Process Simulator</h1>
+    <p class="subtitle">Analyzing Trajectories, Law of Large Numbers (LLN), and Central Limit Theorem (CLT) across n systems and m attackers.</p>
+
+    <!-- CONTROL PANEL -->
+    <div class="card">
+        <h2>1. Simulation Parameters</h2>
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="modelSelect">Stochastic Model:</label>
+                <select id="modelSelect">
+                    <option value="rademacher">Rademacher Model [Xᵢ ∈ {-1, +1}]</option>
+                    <option value="bernoulli">Bernoulli Model [Xᵢ ∈ {0, 1}]</option>
+                </select>
+            </div>
+            <div class="control-group" id="pGroup" style="display:none;">
+                <label for="pInput">Probability p (P(Xᵢ=1)):</label>
+                <input type="number" id="pInput" value="0.5" min="0.01" max="0.99" step="0.05">
+            </div>
+            <div class="control-group">
+                <label for="nStepsInput">Number of Systems / Steps (n):</label>
+                <input type="number" id="nStepsInput" value="100" min="10" max="2000">
+            </div>
+            <div class="control-group">
+                <label for="mAttackersInput">Number of Attackers (m):</label>
+                <input type="number" id="mAttackersInput" value="50" min="5" max="500">
+            </div>
+        </div>
+        <button id="runSimBtn">Run Simulation & Analyze</button>
+    </div>
+
+    <!-- VISUALIZATION 1 & 2 -->
+    <div class="card">
+        <h2>2. Trajectories & Law of Large Numbers (LLN)</h2>
+        <div class="grid-layout">
+            <div class="chart-wrapper">
+                <h3>Total Score Trajectories (Sₙ)</h3>
+                <canvas id="trajectoryCanvas" width="480" height="280"></canvas>
+                <p class="hint">Visualizes m individual paths of cumulative score Sₙ over n steps.</p>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Average Score Convergence (Sₙ / n)</h3>
+                <canvas id="llnCanvas" width="480" height="280"></canvas>
+                <p class="hint">Demonstrates LLN: sample average converges to theoretical mean E[Xᵢ].</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUALIZATION 3 & REPORT -->
+    <div class="card">
+        <h2>3. Central Limit Theorem (CLT) & Statistical Analysis</h2>
+        <div class="grid-layout">
+            <div class="chart-wrapper">
+                <h3>Normalized Distribution (Sₙ / √n)</h3>
+                <canvas id="cltCanvas" width="480" height="280"></canvas>
+                <p class="hint">Compares empirical distribution of Sₙ/√n against standard Normal N(0,σ²).</p>
+            </div>
+            <div class="chart-wrapper" style="flex: 1; min-width: 300px;">
+                <h3>Statistical Report & Interpretation</h3>
+                <div id="statsReport" class="output-box">Run simulation to view statistical metrics...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle Bernoulli probability input visibility
+        document.getElementById('modelSelect').addEventListener('change', (e) => {
+            document.getElementById('pGroup').style.display = (e.target.value === 'bernoulli') ? 'flex' : 'none';
+        });
+
+        function simulateProcess(model, n, m, p) {
+            let trajectories = [];
+            let finalScores = [];
+            let finalAverages = [];
+            let finalNormalized = [];
+
+            let mean = (model === 'bernoulli') ? p : 0;
+            let variance = (model === 'bernoulli') ? p * (1 - p) : 1;
+            let stdDev = Math.sqrt(variance);
+
+            for (let j = 0; j < m; j++) {
+                let path = [];
+                let currentSum = 0;
+                for (let i = 1; i <= n; i++) {
+                    let xi = 0;
+                    if (model === 'bernoulli') {
+                        xi = (Math.random() < p) ? 1 : 0;
+                    } else {
+                        xi = (Math.random() < 0.5) ? 1 : -1;
+                    }
+                    currentSum += xi;
+                    path.push(currentSum);
+                }
+                trajectories.push(path);
+                let Sn = currentSum;
+                finalScores.push(Sn);
+                finalAverages.push(Sn / n);
+                finalNormalized.push(Sn / Math.sqrt(n));
+            }
+
+            return { trajectories, finalScores, finalAverages, finalNormalized, mean, stdDev };
+        }
+
+        function drawTrajectories(canvasId, trajectories, n, m, labelY) {
+            let canvas = document.getElementById(canvasId);
+            let ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let w = canvas.width;
+            let h = canvas.height;
+            let padding = 35;
+
+            // Find min/max for scaling
+            let minVal = Infinity, maxVal = -Infinity;
+            trajectories.forEach(path => {
+                path.forEach(val => {
+                    if (val < minVal) minVal = val;
+                    if (val > maxVal) maxVal = val;
+                });
+            });
+            if (minVal === maxVal) { minVal -= 1; maxVal += 1; }
+
+            // Draw axes
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Courier New';
+            ctx.fillText("0", padding - 12, h - padding + 12);
+            ctx.fillText("n=" + n, w - padding - 15, h - padding + 12);
+            ctx.fillText(labelY, 5, padding - 5);
+
+            // Draw paths
+            ctx.lineWidth = 1;
+            trajectories.forEach((path, idx) => {
+                ctx.strokeStyle = `rgba(0, 0, 0, ${Math.max(0.15, 1 / Math.sqrt(m))})`;
+                ctx.beginPath();
+                path.forEach((val, i) => {
+                    let x = padding + (i / (n - 1 || 1)) * (w - 2 * padding);
+                    let y = h - padding - ((val - minVal) / (maxVal - minVal || 1)) * (h - 2 * padding);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+        }
+
+        function drawLLNChart(canvasId, trajectories, n, m, expectedMean) {
+            let canvas = document.getElementById(canvasId);
+            let ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let w = canvas.width;
+            let h = canvas.height;
+            let padding = 35;
+
+            let minVal = 0, maxVal = 1;
+            if (expectedMean === 0) { minVal = -1.2; maxVal = 1.2; }
+            else { minVal = Math.max(0, expectedMean - 0.6); maxVal = Math.min(1, expectedMean + 0.6); }
+
+            // Draw axes
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.stroke();
+
+            // Theoretical mean reference line
+            let meanY = h - padding - ((expectedMean - minVal) / (maxVal - minVal)) * (h - 2 * padding);
+            ctx.strokeStyle = '#666';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(padding, meanY);
+            ctx.lineTo(w - padding, meanY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw average paths (S_i / i)
+            trajectories.forEach(path => {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                path.forEach((val, i) => {
+                    let stepAvg = val / (i + 1);
+                    let x = padding + (i / (n - 1 || 1)) * (w - 2 * padding);
+                    let y = h - padding - ((stepAvg - minVal) / (maxVal - minVal || 1)) * (h - 2 * padding);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Courier New';
+            ctx.fillText("E[Xᵢ]=" + expectedMean.toFixed(2), w - padding - 75, meanY - 5);
+        }
+
+        function drawHistogram(canvasId, data, stdDev) {
+            let canvas = document.getElementById(canvasId);
+            let ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let w = canvas.width;
+            let h = canvas.height;
+            let padding = 35;
+
+            let minVal = Math.min(...data);
+            let maxVal = Math.max(...data);
+            let range = maxVal - minVal || 1;
+
+            let numBins = 15;
+            let binWidth = range / numBins;
+            let bins = new Array(numBins).fill(0);
+
+            data.forEach(val => {
+                let binIdx = Math.min(Math.floor((val - minVal) / binWidth), numBins - 1);
+                bins[binIdx]++;
+            });
+
+            let maxCount = Math.max(...bins, 1);
+
+            // Draw bars
+            let barW = (w - 2 * padding) / numBins;
+            bins.forEach((count, i) => {
+                let barH = (count / maxCount) * (h - 2 * padding);
+                let x = padding + i * barW;
+                let y = h - padding - barH;
+
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 1, y, barW - 2, barH);
+            });
+
+            // Axes
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Courier New';
+            ctx.fillText("Sₙ/√n Distribution", padding, padding - 5);
+        }
+
+        function run() {
+            let model = document.getElementById('modelSelect').value;
+            let n = parseInt(document.getElementById('nStepsInput').value);
+            let m = parseInt(document.getElementById('mAttackersInput').value);
+            let p = parseFloat(document.getElementById('pInput').value);
+
+            let result = simulateProcess(model, n, m, p);
+
+            drawTrajectories('trajectoryCanvas', result.trajectories, n, m, 'Score Sₙ');
+            
+            // Compute running averages for LLN visualization
+            let avgTrajectories = result.trajectories.map(path => path);
+            drawLLNChart('llnCanvas', avgTrajectories, n, m, result.mean);
+
+            drawHistogram('cltCanvas', result.finalNormalized, result.stdDev);
+
+            // Statistical summary
+            let avgSn = result.finalScores.reduce((a, b) => a + b, 0) / m;
+            let varSn = result.finalScores.reduce((a, b) => a + Math.pow(b - avgSn, 2), 0) / m;
+            let theoryVarSn = n * result.stdDev * result.stdDev;
+
+            let report = `=== SIMULATION SUMMARY (${model.toUpperCase()}) ===\n`;
+            report += `Parameters: n = ${n} systems, m = ${m} attackers\n`;
+            report += `Theoretical Mean E[Xᵢ]   : ${result.mean.toFixed(3)}\n`;
+            report += `Empirical Mean of Sₙ/n   : ${(avgSn / n).toFixed(3)}\n\n`;
+            report += `Variance Analysis:\n`;
+            report += ` - Var(Sₙ) Theory        : ${theoryVarSn.toFixed(1)}\n`;
+            report += ` - Var(Sₙ) Empirical     : ${varSn.toFixed(1)}\n`;
+            report += ` - Var(Sₙ/n) (decreases) : ${(varSn / (n * n)).toFixed(4)}\n`;
+            report += ` - Var(Sₙ/√n) (stable)   : ${(varSn / n).toFixed(4)} (Target: ${result.stdDev * result.stdDev})\n\n`;
+            report += `Interpretation:\n`;
+            report += `- Law of Large Numbers: As n increases, Sₙ/n tightly converges to E[Xᵢ].\n`;
+            report += `- Central Limit Theorem: Normalized score Sₙ/√n converges in distribution to Normal N(0, σ²).`;
+
+            document.getElementById('statsReport').textContent = report;
+        }
+
+        document.getElementById('runSimBtn').addEventListener('click', run);
+
+        // Initial run on load
+        run();
+    </script>
+</body>
+</html>
