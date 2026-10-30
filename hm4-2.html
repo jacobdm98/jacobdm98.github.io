@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welford’s Formulas & Sampling Statistics</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #000000;
+            --border: #000000;
+            --muted: #555555;
+            --light-bg: #f8f8f8;
+            --font: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 20px;
+            background: var(--bg);
+        }
+
+        .code-box {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            font-size: 0.82rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        input, button {
+            font-family: var(--font);
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--fg);
+            border-radius: 0;
+            width: 100%;
+        }
+
+        button {
+            cursor: pointer;
+            background: var(--fg);
+            color: var(--bg);
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 8px;
+            width: auto;
+            padding: 8px 16px;
+        }
+
+        button:hover {
+            background: var(--muted);
+        }
+
+        .output-box {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        ul {
+            margin-left: 20px;
+            font-size: 0.9rem;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ex. 1 & Ex. 2 – Welford’s Formulas & Sampling Analysis</h1>
+    <p class="subtitle">Recurrence Derivations, 3-Line Core Algorithm, and Hacker Penetration Score Simulations</p>
+
+    <!-- EXERCISE 1 -->
+    <div class="card">
+        <h2>Ex. 1 – Welford’s Recurrence Formulas</h2>
+        <p><strong>Mathematical Derivation:</strong></p>
+        <p>Knuth’s update for the mean $\mu_n = \mu_{n-1} + \frac{x_n - \mu_{n-1}}{n}$. Welford's recurrence for the sum of squares $M_2^{(n)} = M_2^{(n-1)} + (x_n - \mu_{n-1})(x_n - \mu_n)$ computes variance efficiently without catastrophic cancellation.</p>
+        
+        <p style="margin-top: 10px;"><strong>Core JavaScript Implementation:</strong></p>
+        <div class="code-box">function welfordVariance(data) {
+    let n = 0, mean = 0, M2 = 0;
+    for (let x of data) {
+        n++;
+        let delta = x - mean;        
+        mean += delta / n;             
+        M2 += delta * (x - mean);      
+    }
+    return { mean, variance: n > 1 ? M2 / (n - 1) : 0 };
+}</div>
+
+        <div class="control-group" style="margin-top: 12px;">
+            <label for="dataInput">Test Dataset (comma/space separated):</label>
+            <input type="text" id="dataInput" value="4, 7, 13, 16, 22, 28, 31">
+        </div>
+        <button id="calculateEx1Btn">Run Welford Test</button>
+        <div id="ex1Output" class="output-box">Results will appear here...</div>
+    </div>
+
+    <!-- EXERCISE 2 -->
+    <div class="card">
+        <h2>Ex. 2 – Sampling Mean and Variance (Hackers & Systems)</h2>
+        <p>Simulates m hackers attempting n systems, where each attempt yields a score uniformly distributed in integer range $[0, 10]$.</p>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
+            Theoretical Uniform Distribution $[0, 10]$ Parameters: $\mu = 5.0$, $\sigma^2 = \frac{10^2 - 1}{12} = 10.0$
+        </p>
+
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="nSystemsInput">Number of Systems (n):</label>
+                <input type="number" id="nSystemsInput" value="30" min="5" max="1000">
+            </div>
+            <div class="control-group">
+                <label for="mHackersInput">Number of Hackers (m):</label>
+                <input type="number" id="mHackersInput" value="500" min="10" max="5000">
+            </div>
+        </div>
+        <button id="calculateEx2Btn">Run Penetration Sampling Simulation</button>
+
+        <div id="ex2Output" class="output-box">Run simulation above to view aggregate hacker statistics...</div>
+    </div>
+
+    <script>
+        // Exercise 1 Logic
+        function welfordStats(data) {
+            let n = 0, mean = 0, M2 = 0;
+            let steps = [];
+            for (let x of data) {
+                n++;
+                let delta = x - mean;          // Line 1
+                mean += delta / n;             // Line 2
+                M2 += delta * (x - mean);      // Line 3
+                steps.push({ n, x, mean, M2 });
+            }
+            return {
+                n, mean, M2,
+                variance: n > 1 ? M2 / (n - 1) : 0,
+                steps
+            };
+        }
+
+        document.getElementById('calculateEx1Btn').addEventListener('click', () => {
+            let rawText = document.getElementById('dataInput').value;
+            let data = rawText.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+            if (data.length === 0) return;
+
+            let res = welfordStats(data);
+            let out = `Count (n): ${res.n} | Mean (μ): ${res.mean.toFixed(4)} | Sample Var: ${res.variance.toFixed(4)}\n\nSteps:\n`;
+            res.steps.forEach(s => {
+                out += ` n=${s.n} | x=${s.x} | Mean=${s.mean.toFixed(2)} | M2=${s.M2.toFixed(2)}\n`;
+            });
+            document.getElementById('ex1Output').textContent = out;
+        });
+        document.getElementById('calculateEx1Btn').click();
+
+        // Exercise 2 Logic
+        document.getElementById('calculateEx2Btn').addEventListener('click', () => {
+            let n = parseInt(document.getElementById('nSystemsInput').value) || 30;
+            let m = parseInt(document.getElementById('mHackersInput').value) || 500;
+
+            const trueMu = 5.0;
+            const trueVar = 10.0; // For discrete uniform integers 0 to 10: Var = (11^2 - 1)/12 = 10
+
+            let hackerMeans = [];
+            let hackerVariances = [];
+
+            for (let h = 0; h < m; h++) {
+                let n_count = 0, mean = 0, M2 = 0;
+                for (let i = 0; i < n; i++) {
+                    // Draw random integer score between 0 and 10 inclusive
+                    let x = Math.floor(Math.random() * 11);
+                    n_count++;
+                    let delta = x - mean;
+                    mean += delta / n_count;
+                    M2 += delta * (x - mean);
+                }
+                let sampleVar = n_count > 1 ? M2 / (n_count - 1) : 0;
+                hackerMeans.push(mean);
+                hackerVariances.push(sampleVar);
+            }
+
+            let avgSampleMean = hackerMeans.reduce((a, b) => a + b, 0) / m;
+            let avgSampleVar = hackerVariances.reduce((a, b) => a + b, 0) / m;
+
+            // Compute standard deviation of sampling means to show variance reduction with n
+            let meanOfMeansSqDiff = hackerMeans.reduce((a, b) => a + Math.pow(b - avgSampleMean, 2), 0) / m;
+            let stdErrorOfMean = Math.sqrt(meanOfMeansSqDiff);
+
+            let out = `=== EX. 2 SIMULATION RESULTS (m = ${m} hackers, n = ${n} systems) ===\n\n`;
+            out += `1. EXPECTED VALUES vs THEORETICAL:\n`;
+            out += `   - Theoretical Mean (μ)         : ${trueMu.toFixed(4)}\n`;
+            out += `   - Average of Hacker Means      : ${avgSampleMean.toFixed(4)}  (Diff: ${(avgSampleMean - trueMu).toFixed(4)})\n\n`;
+            out += `   - Theoretical Variance (σ²)    : ${trueVar.toFixed(4)}\n`;
+            out += `   - Average of Hacker Variances  : ${avgSampleVar.toFixed(4)}  (Diff: ${(avgSampleVar - trueVar).toFixed(4)})\n\n`;
+            out += `2. SAMPLING VARIABILITY:\n`;
+            out += `   - Std. Error of Sampling Means : ${stdErrorOfMean.toFixed(4)} (Expected ≈ σ/√n = ${(Math.sqrt(trueVar) / Math.sqrt(n)).toFixed(4)})\n\n`;
+            out += `3. CONCLUSIONS & INFERENTIAL STATISTICAL INTERPRETATION:\n`;
+            out += `   - Unbiasedness: The average of the sampling means closely approximates the true mean μ, and the average sample variance unbiasedly tracks σ².\n`;
+            out += `   - Effect of Increasing n: As the number of systems (n) grows, the variability (standard error) of the sampling means shrinks inverse-proportionally to √n.\n`;
+            out += `   - Inferential Utility: These properties allow security analysts to reliably infer population-level attacker capabilities from finite penetration tests.`;
+
+            document.getElementById('ex2Output').textContent = out;
+        });
+
+        // Run Ex 2 on load
+        document.getElementById('calculateEx2Btn').click();
+    </script>
+</body>
+</html>
